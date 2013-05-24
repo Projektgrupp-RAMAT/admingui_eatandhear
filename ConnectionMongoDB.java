@@ -22,8 +22,8 @@ public class ConnectionMongoDB {
 
 		try {
 
-			mongoClient = new MongoClient("localhost", 27017);
-			return mongoClient.getDB("test");
+			mongoClient = new MongoClient("213.103.211.100", 27017);
+			return mongoClient.getDB("EatAndHear");
 
 		} catch (UnknownHostException e) {
 			throw e;

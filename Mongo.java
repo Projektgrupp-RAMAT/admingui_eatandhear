@@ -1,24 +1,21 @@
 package admingui_eatandhear;
 
 import com.google.gson.Gson;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
+import com.mongodb.*;
 import com.mongodb.util.JSON;
+import org.bson.types.ObjectId;
+
+import javax.swing.table.DefaultTableModel;
 import java.net.UnknownHostException;
+import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.table.DefaultTableModel;
 
 /**
  *
- * @author Tim
+ * @author Tim Sahi, Markus Eriksson, Andreas Beuger
  */
 public class Mongo {
 
@@ -47,7 +44,7 @@ public class Mongo {
 
     }
 
-    public void deleteComment(String restId, String userId, String text) {
+    public void deleteComment(String id) {
 
 
         try {
@@ -55,9 +52,8 @@ public class Mongo {
             db = ConnectionMongoDB.getConnection();
             DBCollection coll = db.getCollection("comments");
 
-            BasicDBObject query = new BasicDBObject("restId", restId);
-            query.put("userId", userId);
-            query.put("text", text);
+            BasicDBObject query = new BasicDBObject("_id", new ObjectId(id));
+
             coll.remove(query);
         } catch (UnknownHostException ex) {
             Logger.getLogger(Mongo.class.getName()).log(Level.SEVERE, null, ex);
@@ -67,34 +63,58 @@ public class Mongo {
 
     }
     
-    public void saveChanges(Comment comment, Comment oldComment) {
+    public void saveChanges(Comment comment) {
         try {
-            
-            db = ConnectionMongoDB.getConnection();
-            DBCollection coll = db.getCollection("comments");
-            BasicDBObject query = new BasicDBObject("restId", oldComment.getRestId());
-            query.put("userId", oldComment.getUserId());
-            query.put("userName", oldComment.getUserName());
-         //   query.put("soundLvl", oldComment.getSoundLvl());
-            query.put("text", oldComment.getText());
-   
-            BasicDBObject newCom = new BasicDBObject("restId", comment.getRestId());
-            newCom.append("userId", comment.getUserId());
-            newCom.append("userName", comment.getUserName());
-            newCom.append("soundLvl", comment.getSoundLvl());
-            newCom.append("text", comment.getText());
-            BasicDBObject set = new BasicDBObject("$set", newCom);
+
+           db = ConnectionMongoDB.getConnection();
+           DBCollection coll = db.getCollection("comments");
+            BasicDBObject query = new BasicDBObject("_id", new ObjectId(comment.getId()));
+
+           BasicDBObject newCom = new BasicDBObject("restId", comment.getRestId());
+           newCom.append("userId", comment.getUserId());
+           newCom.append("userName", comment.getUserName());
+           newCom.append("soundLvl", comment.getSoundLvl());
+           newCom.append("text", comment.getText());
+           newCom.append("flagged", comment.getFlagged());
+           BasicDBObject set = new BasicDBObject("$set", newCom);
         
-            coll.update(query, set);
+           coll.update(query, set);
             
             
             
-        } catch (UnknownHostException ex) {
-            Logger.getLogger(Mongo.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (Exception e) {
+
         }
           
 
         
+    }
+    public String getUptime(){
+
+        double uptime = 0;
+
+        try {
+            db = ConnectionMongoDB.getConnection();
+            CommandResult cls =  db.command("serverStatus");
+            uptime =  (Double)cls.get("uptime") ;
+
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+
+
+
+        uptime/=60;
+        uptime/=60;
+        uptime/=24;
+
+        NumberFormat nf = NumberFormat.getInstance();
+        nf.setMaximumFractionDigits(2);
+        String uptimeString = nf.format(uptime);
+
+
+
+        return uptimeString + " days.";
     }
     public DefaultTableModel getFlaggedComments() {
         
@@ -102,6 +122,8 @@ public class Mongo {
         DBCursor cursor = null;
         Gson gson;
         ArrayList<Comment> list = new ArrayList<Comment>();
+        DBObject dbo;
+        Comment comment;
 
         try {
 
@@ -111,16 +133,18 @@ public class Mongo {
             gson = new Gson();
             cursor = coll.find(query);
 
+
             while (cursor.hasNext()) {
-                
-                list.add((Comment) gson.fromJson(cursor.next().toString(), Comment.class));
+
+                dbo = cursor.next();
+                comment =(Comment) gson.fromJson(dbo.toString(), Comment.class);
+                comment.setId(dbo.get("_id").toString());
+                list.add(comment);
+
             }
 
         } catch (UnknownHostException e) {
-
-            e.printStackTrace();
-            throw new RuntimeException(e);
-
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         } finally {
 
             cursor.close();
@@ -136,9 +160,9 @@ public class Mongo {
 
         }
 
-        Vector<String> column = new Vector<>();
+        Vector<String> column = new Vector/*<>*/();
 
-
+        column.add("ID");
         column.add("Rest ID");
         column.add("Username");
         column.add("User ID");
@@ -153,14 +177,19 @@ public class Mongo {
         return model;
         
     }
+    public boolean getConnectionStatus() {
+        return true;
+    }
 
-    public DefaultTableModel getComments() {
+        public DefaultTableModel getComments() {
 
 
         DBCollection coll;
         DBCursor cursor = null;
         Gson gson;
         ArrayList<Comment> list = new ArrayList<Comment>();
+        DBObject dbo;
+        Comment comment;
 
         try {
 
@@ -170,8 +199,12 @@ public class Mongo {
             cursor = coll.find();
 
             while (cursor.hasNext()) {
-                
-                list.add((Comment) gson.fromJson(cursor.next().toString(), Comment.class));
+
+
+                dbo = cursor.next();
+                comment =(Comment) gson.fromJson(dbo.toString(), Comment.class);
+                comment.setId(dbo.get("_id").toString());
+                list.add(comment);
             }
 
         } catch (UnknownHostException e) {
@@ -194,9 +227,9 @@ public class Mongo {
 
         }
 
-        Vector<String> column = new Vector<>();
+        Vector<String> column = new Vector/*<>*/();
 
-
+        column.add("ID");
         column.add("Rest ID");
         column.add("Username");
         column.add("User ID");

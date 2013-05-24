@@ -4,16 +4,13 @@
  */
 package admingui_eatandhear;
 
-import java.net.UnknownHostException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.JOptionPane;
+
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 
 /**
  *
- * @author Tim
+ * @author Tim Sahi, Markus Eriksson, Andreas Beuger
  */
 public class MainFrame extends javax.swing.JFrame {
 
@@ -292,6 +289,8 @@ public class MainFrame extends javax.swing.JFrame {
                 .addContainerGap(366, Short.MAX_VALUE))
         );
 
+
+
         mainTabbedPane.addTab("Status", statusPane);
 
         javax.swing.GroupLayout userAdminpaneLayout = new javax.swing.GroupLayout(userAdminpane);
@@ -313,6 +312,13 @@ public class MainFrame extends javax.swing.JFrame {
                 addNewCommentActionPerformed(evt);
             }
         });
+        loadStatusButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                getServerStatus(evt);
+            }
+        });
+
+
 
         clearCommentPanel.setText("Clear");
         clearCommentPanel.addActionListener(new java.awt.event.ActionListener() {
@@ -421,7 +427,17 @@ public class MainFrame extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+    private void getServerStatus(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadEntriesButtonActionPerformed
+        Mongo mongo = new Mongo();
 
+        dbEntriesLabel.setText("Database entries: " + mongo.getComments().getRowCount());
+        flaggedEntriesLabel.setText("Flagged comments: " + mongo.getFlaggedComments().getRowCount());
+        uptimeLabel.setText("Uptime: " + mongo.getUptime());
+        mongo.getUptime();
+
+
+
+    }
     private void loadEntriesButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadEntriesButtonActionPerformed
 
         Mongo mongo = new Mongo();
@@ -477,8 +493,8 @@ public class MainFrame extends javax.swing.JFrame {
 
         Mongo mongo = new Mongo();
 
-        mongo.deleteComment((String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 0), (String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 2), (String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 3));
-
+     //   mongo.deleteComment((String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 0), (String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 2), (String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 3));
+        mongo.deleteComment((String)entriesTable.getValueAt(entriesTable.getSelectedRow(),0));
 
 
     }//GEN-LAST:event_deleteMenuActionPerformed
@@ -498,24 +514,19 @@ public class MainFrame extends javax.swing.JFrame {
       
        Mongo mongo = new Mongo();
        DefaultTableModel old = mongo.getComments();
-  
-       String rId =  (String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 0);
-       String uId  = (String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 2);
-       String uName = (String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 1);
-       String soundLvl = (String)entriesTable.getValueAt(entriesTable.getSelectedRow(), 4);
-       String text = (String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 3);
-       
-       String old_rId =  (String) old.getValueAt(entriesTable.getSelectedRow(), 0);
-       String old_uId  = (String) old.getValueAt(entriesTable.getSelectedRow(), 2);
-       String old_uName = (String) old.getValueAt(entriesTable.getSelectedRow(), 1);
-       String old_soundLvl = (String) old.getValueAt(entriesTable.getSelectedRow(), 4);
-       String old_text = (String) old.getValueAt(entriesTable.getSelectedRow(), 3);
-      
-       
-       Comment comment = new Comment(rId, uId, uName, soundLvl, text);
-       Comment oldComment = new Comment(old_rId, old_uId, old_uName, old_soundLvl, old_text);  
-      
-        mongo.saveChanges(comment, oldComment);
+
+       String id = (String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 0);
+       String rId =  (String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 1);
+       String uId  = (String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 3);
+       String uName = (String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 2);
+       String soundLvl = (String)entriesTable.getValueAt(entriesTable.getSelectedRow(), 5);
+       String text = (String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 4);
+       boolean flagged =  Boolean.parseBoolean( (String) entriesTable.getValueAt(entriesTable.getSelectedRow(), 6));
+
+       Comment comment = new Comment(rId, uId, uName, soundLvl, text, flagged, id);
+
+
+        mongo.saveChanges(comment);
         
     }//GEN-LAST:event_saveChangesMenuActionPerformed
 
@@ -547,32 +558,26 @@ public class MainFrame extends javax.swing.JFrame {
     private void flagDeleteMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_flagDeleteMenuActionPerformed
            Mongo mongo = new Mongo();
 
-        mongo.deleteComment((String) flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(), 0), (String) flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(), 2), (String) flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(), 3));
+        mongo.deleteComment((String)flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(),0));
     }//GEN-LAST:event_flagDeleteMenuActionPerformed
 
     private void flagSaveChangeMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_flagSaveChangeMenuActionPerformed
         
              
        Mongo mongo = new Mongo();
-       DefaultTableModel old = mongo.getFlaggedComments();
-  
-       String rId =  (String) flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(), 0);
-       String uId  = (String) flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(), 2);
-       String uName = (String) flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(), 1);
-       String soundLvl = (String)flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(), 4);
-       String text = (String) flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(), 3);
-       
-       String old_rId =  (String) old.getValueAt(flaggedEntriesTable.getSelectedRow(), 0);
-       String old_uId  = (String) old.getValueAt(flaggedEntriesTable.getSelectedRow(), 2);
-       String old_uName = (String) old.getValueAt(flaggedEntriesTable.getSelectedRow(), 1);
-       String old_soundLvl = (String) old.getValueAt(flaggedEntriesTable.getSelectedRow(), 4);
-       String old_text = (String) old.getValueAt(flaggedEntriesTable.getSelectedRow(), 3);
+
+
+        String id = (String) flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(), 0);
+        String rId =  (String) flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(), 1);
+        String uId  = (String) flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(), 3);
+        String uName = (String) flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(), 2);
+        String soundLvl = (String)flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(), 5);
+        String text = (String) flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(), 4);
+        boolean flagged =  Boolean.parseBoolean( (String) flaggedEntriesTable.getValueAt(flaggedEntriesTable.getSelectedRow(), 6));
+
+        Comment comment = new Comment(rId, uId, uName, soundLvl, text, flagged, id);
       
-       
-       Comment comment = new Comment(rId, uId, uName, soundLvl, text);
-       Comment oldComment = new Comment(old_rId, old_uId, old_uName, old_soundLvl, old_text);  
-      
-        mongo.saveChanges(comment, oldComment);
+        mongo.saveChanges(comment);
         
     }//GEN-LAST:event_flagSaveChangeMenuActionPerformed
 
